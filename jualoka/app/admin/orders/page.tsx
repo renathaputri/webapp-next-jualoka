@@ -221,7 +221,7 @@ function StatusDropdown({
             {open && (
                 <>
                     <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-                    <div className="absolute right-0 top-9 z-20 bg-white border border-border/60 rounded-2xl shadow-xl py-1.5 min-w-[160px]">
+                    <div className="absolute right-0 top-9 z-20 bg-white border border-border/60 rounded-2xl shadow-xl py-1.5 min-w-[160px] max-h-56 overflow-y-auto">
                         {statuses.map((s) => {
                             const cfg = STATUS_CONFIG[s]
                             const Icon = cfg.icon
@@ -259,7 +259,7 @@ function OrderCard({
     const [expanded, setExpanded] = useState(false)
 
     return (
-        <div className="bg-white rounded-2xl border border-border/50 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-border/50 shadow-sm hover:shadow-md transition-shadow duration-200">
             {/* Header */}
             <div className="flex items-start gap-4 p-5">
                 {/* Avatar */}
@@ -495,7 +495,7 @@ export default function AdminOrdersPage() {
             </div>
 
             {/* Filter & Search bar */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 min-w-0">
                 {/* Search */}
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -509,7 +509,7 @@ export default function AdminOrdersPage() {
                 </div>
 
                 {/* Status filter pill */}
-                <div className="flex items-center gap-1.5 bg-white border border-border rounded-xl px-2 py-1 overflow-x-auto">
+                <div className="flex flex-col sm:flex-row gap-3 items-start">
                     <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground shrink-0 ml-1" />
                     {ALL_STATUSES.map((s) => (
                         <button

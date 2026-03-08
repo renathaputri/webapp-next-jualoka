@@ -283,7 +283,7 @@ export default function StoresPage() {
                         Temukan Toko <span className="text-secondary">UMKM</span><br className="hidden sm:block" /> Terbaik Indonesia
                     </h1>
                     <p className="text-white/70 text-base sm:text-lg mb-10 max-w-2xl mx-auto">
-                        Jelajahi ratusan toko UMKM lokal. Dari kuliner hingga kerajinan — semuanya ada di sini.
+                        Jelajahi ratusan toko UMKM lokal. Dari kuliner hingga kerajinan semuanya ada di sini.
                     </p>
 
                     {/* Search bar */}
