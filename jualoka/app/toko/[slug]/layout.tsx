@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { ShoppingBag } from "lucide-react"
+import { CartBadge } from "@/components/localStorage/CartBadge"
 
 export default async function TokoLayout({
     children,
@@ -35,9 +36,7 @@ export default async function TokoLayout({
                     >
                         <ShoppingBag className="h-4 w-4" />
                         <span>Keranjang</span>
-                        <span className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-secondary text-[10px] font-bold flex items-center justify-center text-foreground shadow">
-                            2
-                        </span>
+                        <CartBadge />
                     </Link>
                 </div>
             </header>

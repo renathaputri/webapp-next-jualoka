@@ -6,6 +6,7 @@ import {
     BannerConfig,
 } from "@/lib/bannerStore"
 import { getStoreOpenFromCookie } from "@/lib/storeActions"
+import { ProductGrid } from "@/components/toko/ProductGrid"
 
 // Always read fresh cookie on every request — no caching
 export const dynamic = "force-dynamic"
@@ -133,48 +134,8 @@ export default async function StorePage({
             </div>
 
             {/* Product Grid — disable ordering when closed */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                {storeProducts.map((product) => (
-                    <div key={product.id} className={`group bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col border border-border/50 ${!isOpen ? "opacity-60 pointer-events-none select-none" : ""}`}>
-                        {/* Image */}
-                        <div className="relative overflow-hidden aspect-square">
-                            <img
-                                src={product.image}
-                                alt={product.name}
-                                className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
-                            />
-                            {product.tag && (
-                                <div className="absolute top-3 left-3 bg-secondary text-foreground text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full shadow">
-                                    {product.tag}
-                                </div>
-                            )}
-                            {!isOpen && (
-                                <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
-                                    <span className="text-xs font-bold text-red-500 bg-white px-3 py-1 rounded-full shadow border border-red-200">
-                                        Tutup
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Content */}
-                        <div className="p-4 flex flex-col flex-1">
-                            <h3 className="font-semibold text-sm leading-tight line-clamp-2 mb-1">{product.name}</h3>
-                            <p className="text-xs text-muted-foreground line-clamp-2 mb-4 flex-1">{product.description}</p>
-
-                            <div className="flex items-center justify-between mt-auto">
-                                <span className="text-primary font-bold text-base">
-                                    Rp {product.price.toLocaleString("id-ID")}
-                                </span>
-                                <Button size="sm" className="rounded-xl h-8 gap-1.5 shadow-sm" disabled={!isOpen}>
-                                    <ShoppingCart className="h-3.5 w-3.5" />
-                                    {isOpen ? "Pesan" : "Tutup"}
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
+            <ProductGrid products={storeProducts} isOpen={isOpen} />
+        
         </div>
     )
 }
