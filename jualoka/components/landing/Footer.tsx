@@ -38,7 +38,7 @@ export default function Footer() {
 
                     {/* Copyright */}
                     <p className="text-xs text-center md:text-right">
-                        © 2025 Jualoka. Dibuat untuk UMKM Indonesia 🇮🇩
+                        © 2026 Jualoka. Dibuat untuk UMKM Indonesia 🇮🇩
                     </p>
                 </div>
             </div>
