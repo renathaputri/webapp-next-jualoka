@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { Store, ChevronRight } from "lucide-react"
 
 const NAV_LINKS = [
@@ -14,9 +15,13 @@ export default function Navbar() {
             <div className="max-w-6xl mx-auto h-full flex items-center justify-between px-5">
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-2.5">
-                    <div className="h-8 w-8 rounded-xl bg-primary flex items-center justify-center shadow-sm">
-                        <Store className="h-4 w-4 text-white" />
-                    </div>
+                    <Image
+                        src="/logo.svg"
+                        alt="Jualoka Logo"
+                        width={32}
+                        height={32}
+                        className="rounded-xl"
+                    />
                     <span className="font-bold text-lg text-foreground">Jualoka</span>
                 </Link>
 
