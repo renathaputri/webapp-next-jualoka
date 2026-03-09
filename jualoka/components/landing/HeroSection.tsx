@@ -1,3 +1,5 @@
+"use client"
+
 import Link from "next/link"
 import {
     Star,
@@ -8,6 +10,7 @@ import {
     ChevronRight,
     CheckCircle2,
 } from "lucide-react"
+import { MotionWrapper } from "./MotionWrapper"
 
 const SOCIAL_PROOF = [
     "Gratis tanpa kartu kredit",
@@ -36,60 +39,70 @@ export default function HeroSection() {
             {/* Text content */}
             <div className="relative max-w-6xl mx-auto px-5 text-center z-10">
                 {/* Badge */}
-                <div className="inline-flex items-center gap-2 bg-secondary/20 text-amber-700 text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full mb-6 border border-secondary/30">
-                    <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
-                    Platform #1 untuk UMKM Indonesia
-                </div>
+                <MotionWrapper>
+                    <div className="inline-flex items-center gap-2 bg-secondary/20 text-amber-700 text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full mb-6 border border-secondary/30">
+                        <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+                        Platform #1 untuk UMKM Indonesia
+                    </div>
+                </MotionWrapper>
 
                 {/* Headline */}
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1] mb-6 text-balance">
-                    Jual Lebih Banyak,
-                    <br />
-                    <span className="relative inline-block">
-                        <span className="relative z-10 text-primary">Produksi Lebih Cerdas</span>
-                        <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 300 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M2 9C50 3 100 1 150 3C200 5 250 3 298 9" stroke="#fac023" strokeWidth="4" strokeLinecap="round" />
-                        </svg>
-                    </span>
-                </h1>
+                <MotionWrapper delay={0.1}>
+                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1] mb-6 text-balance">
+                        Jual Lebih Banyak,
+                        <br />
+                        <span className="relative inline-block">
+                            <span className="relative z-10 text-primary">Produksi Lebih Cerdas</span>
+                            <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 300 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M2 9C50 3 100 1 150 3C200 5 250 3 298 9" stroke="#fac023" strokeWidth="4" strokeLinecap="round" />
+                            </svg>
+                        </span>
+                    </h1>
+                </MotionWrapper>
 
                 {/* Subtitle */}
-                <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-                    Buat toko online, terima pesanan via WhatsApp, dan ketahui produk mana yang benar-benar laku —
-                    semuanya dalam satu platform yang mudah digunakan untuk UMKM.
-                </p>
+                <MotionWrapper delay={0.2}>
+                    <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+                        Buat toko online, terima pesanan via WhatsApp, dan ketahui produk mana yang benar-benar laku —
+                        semuanya dalam satu platform yang mudah digunakan untuk UMKM.
+                    </p>
+                </MotionWrapper>
 
                 {/* CTA Buttons */}
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-14">
-                    <Link
-                        href="/auth/register"
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary text-white font-bold px-7 py-3.5 rounded-2xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 active:scale-95 text-base"
-                    >
-                        Buat Toko Sekarang
-                        <ArrowRight className="h-4 w-4" />
-                    </Link>
-                    <Link
-                        href="/toko/toko-berkah"
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-foreground font-semibold px-7 py-3.5 rounded-2xl border border-border hover:border-primary/30 hover:bg-primary/5 transition-all text-base shadow-sm"
-                    >
-                        Lihat Contoh Toko
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    </Link>
-                </div>
+                <MotionWrapper delay={0.3}>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-14">
+                        <Link
+                            href="/auth/register"
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary text-white font-bold px-7 py-3.5 rounded-2xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 active:scale-95 text-base"
+                        >
+                            Buat Toko Sekarang
+                            <ArrowRight className="h-4 w-4" />
+                        </Link>
+                        <Link
+                            href="/toko/toko-berkah"
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-foreground font-semibold px-7 py-3.5 rounded-2xl border border-border hover:border-primary/30 hover:bg-primary/5 transition-all text-base shadow-sm"
+                        >
+                            Lihat Contoh Toko
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </Link>
+                    </div>
+                </MotionWrapper>
 
                 {/* Social proof */}
-                <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-muted-foreground">
-                    {SOCIAL_PROOF.map((item) => (
-                        <div key={item} className="flex items-center gap-1.5">
-                            <CheckCircle2 className="h-4 w-4 text-primary" />
-                            <span>{item}</span>
-                        </div>
-                    ))}
-                </div>
+                <MotionWrapper delay={0.4}>
+                    <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-muted-foreground">
+                        {SOCIAL_PROOF.map((item) => (
+                            <div key={item} className="flex items-center gap-1.5">
+                                <CheckCircle2 className="h-4 w-4 text-primary" />
+                                <span>{item}</span>
+                            </div>
+                        ))}
+                    </div>
+                </MotionWrapper>
             </div>
 
             {/* Dashboard preview mockup */}
-            <div className="relative z-10 max-w-5xl mx-auto px-5 mt-16">
+            <MotionWrapper delay={0.5} className="relative z-10 max-w-5xl mx-auto px-5 mt-16">
                 <div className="relative rounded-3xl overflow-hidden border border-border/60 shadow-2xl shadow-black/10">
                     {/* Browser chrome */}
                     <div className="bg-[#f0f0f0] px-4 py-3 flex items-center gap-2 border-b border-border/40">
@@ -168,7 +181,7 @@ export default function HeroSection() {
                         </div>
                     </div>
                 </div>
-            </div>
+            </MotionWrapper>
         </section>
     )
 }

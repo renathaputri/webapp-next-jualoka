@@ -1,0 +1,160 @@
+"use client"
+
+import { useState } from "react"
+import { Store, Phone, Link2, CheckCircle2, Pencil } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { getOnboardingData, saveOnboardingData } from "@/components/localStorage/OnboardingStorage"
+
+export function StoreInfoTab() {
+    const [isEditing, setIsEditing] = useState(() => {
+        try {
+            const data = getOnboardingData()
+            return !data.storeName || !data.slug || !data.whatsapp
+        } catch { return true }
+    })
+
+    const [storeName, setStoreName] = useState(() => {
+        try {
+            const data = getOnboardingData()
+            return data.storeName ?? ""
+        } catch { return "" }
+    })
+
+    const [slug, setSlug] = useState(() => {
+        try {
+            const data = getOnboardingData()
+            if (data.slug) return data.slug
+            if (data.storeName) return data.storeName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
+            return ""
+        } catch { return "" }
+    })
+
+    const [whatsapp, setWhatsapp] = useState(() => {
+        try {
+            const data = getOnboardingData()
+            return data.whatsapp ?? ""
+        } catch { return "" }
+    })
+
+    const [saved, setSaved] = useState(false)
+
+    return (
+        <div className="flex flex-col gap-6 max-w-xl">
+            <Card className="border-0 shadow-sm bg-white">
+                <CardHeader className="px-6 pt-6 pb-5 border-b border-border/50">
+                    <CardTitle className="text-base">Informasi Umum</CardTitle>
+                    <CardDescription>Informasi ini akan tampil di halaman toko publik Anda.</CardDescription>
+                </CardHeader>
+                <CardContent className="px-6 py-6">
+                    <form className="space-y-6" onSubmit={(e) => {
+                        e.preventDefault()
+                        saveOnboardingData({ storeName, slug, whatsapp })
+                        setIsEditing(false)
+                        setSaved(true)
+                        setTimeout(() => setSaved(false), 2500)
+                    }}>
+                        <div className="space-y-2">
+                            <Label htmlFor="storeName" className="flex items-center gap-2">
+                                <Store className="h-3.5 w-3.5 text-muted-foreground" />
+                                Nama Toko
+                            </Label>
+                            <Input
+                                id="storeName"
+                                placeholder="Nama toko Anda"
+                                value={storeName}
+                                onChange={(e) => setStoreName(e.target.value)}
+                                disabled={!isEditing}
+                                className="h-11 rounded-xl disabled:opacity-60 disabled:cursor-not-allowed"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="slug" className="flex items-center gap-2">
+                                <Link2 className="h-3.5 w-3.5 text-muted-foreground" />
+                                URL Toko
+                            </Label>
+                            <div className={`flex items-center rounded-xl border border-input overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${!isEditing ? "opacity-60" : ""}`}>
+                                <span className="text-muted-foreground text-sm bg-muted px-3 h-11 flex items-center border-r border-input whitespace-nowrap shrink-0">
+                                    jualoka.com/toko/
+                                </span>
+                                <input
+                                    id="slug"
+                                    className="flex-1 h-11 px-3 text-sm outline-none bg-background disabled:cursor-not-allowed"
+                                    placeholder="nama-toko"
+                                    value={slug}
+                                    onChange={(e) => setSlug(e.target.value)}
+                                    disabled={!isEditing}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="whatsapp" className="flex items-center gap-2">
+                                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                                Nomor WhatsApp
+                            </Label>
+                            <div className={`flex items-center rounded-xl border border-input overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${!isEditing ? "opacity-60" : ""}`}>
+                                <span className="text-muted-foreground text-sm bg-muted px-3 h-11 flex items-center border-r border-input">+62</span>
+                                <input
+                                    id="whatsapp"
+                                    type="tel"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    className="flex-1 h-11 px-3 text-sm outline-none bg-background disabled:cursor-not-allowed"
+                                    placeholder="81234567890"
+                                    value={whatsapp}
+                                    onChange={(e) => setWhatsapp(e.target.value.replace(/[^0-9]/g, ""))}
+                                    disabled={!isEditing}
+                                />
+                            </div>
+                            <p className="text-xs text-muted-foreground">Digunakan untuk menerima pesanan langsung.</p>
+                        </div>
+
+                        <div className="flex justify-end gap-2 pt-2">
+                            <Button
+                                type="button"
+                                onClick={() => setIsEditing(true)}
+                                disabled={isEditing}
+                                className="rounded-xl px-6 gap-2 bg-secondary hover:bg-secondary/90 text-secondary-foreground disabled:opacity-40"
+                            >
+                                <Pencil className="h-3.5 w-3.5" />
+                                Edit
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={!isEditing || !storeName.trim() || !slug.trim() || !whatsapp.trim()}
+                                className="rounded-xl px-6 bg-primary hover:bg-primary/90 disabled:opacity-40"
+                            >
+                                Simpan Perubahan
+                            </Button>
+                        </div>
+                    </form>
+                </CardContent>
+            </Card>
+
+            {/* Danger Zone */}
+            <Card className="border border-red-200 bg-red-50/30">
+                <CardHeader className="px-6 pt-5 pb-4">
+                    <CardTitle className="text-sm font-semibold text-red-700">Zona Berbahaya</CardTitle>
+                </CardHeader>
+                <CardContent className="px-6 pb-5 flex items-center justify-between gap-4">
+                    <div>
+                        <p className="text-sm font-medium">Hapus Toko</p>
+                        <p className="text-xs text-muted-foreground">Tindakan ini tidak dapat dibatalkan.</p>
+                    </div>
+                    <Button variant="destructive" size="sm" className="rounded-xl shrink-0">Hapus Toko</Button>
+                </CardContent>
+            </Card>
+
+            {saved && (
+                <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-foreground text-background text-sm font-medium px-4 py-3 rounded-2xl shadow-2xl">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                    Informasi toko berhasil disimpan!
+                </div>
+            )}
+        </div>
+    )
+}

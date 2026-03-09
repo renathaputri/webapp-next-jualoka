@@ -1,0 +1,49 @@
+import { Star } from "lucide-react"
+import {
+    BannerConfig,
+    THEME_GRADIENTS,
+} from "@/lib/bannerStore"
+
+export function getBannerGradient(config: BannerConfig): string {
+    if (config.theme === "custom") return config.customGradient
+    return THEME_GRADIENTS[config.theme]
+}
+
+export function BannerPreview({ config }: { config: BannerConfig }) {
+    const gradientClass = getBannerGradient(config)
+    const titleLines = config.title.split("\n")
+    return (
+        <div
+            className={`relative rounded-2xl overflow-hidden bg-gradient-to-br ${gradientClass} p-6 sm:p-8 text-white shadow-lg min-h-[140px] flex items-center ${config.layout === "center" ? "justify-center text-center" : "justify-start text-left"}`}
+        >
+            {config.imageUrl && (
+                <div
+                    className="absolute inset-0 bg-cover bg-center"
+                    style={{
+                        backgroundImage: `url('${config.imageUrl}')`,
+                        opacity: config.imageOpacity / 100,
+                    }}
+                />
+            )}
+            <div className={`relative z-10 ${config.layout === "center" ? "max-w-lg" : "max-w-xl"}`}>
+                {config.badge && (
+                    <div className="inline-flex items-center gap-2 bg-[#fac023] text-[#1a1a1a] text-xs font-bold px-3 py-1 rounded-full mb-3">
+                        <Star className="h-3 w-3 fill-current" />
+                        {config.badge}
+                    </div>
+                )}
+                <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight leading-tight mb-2">
+                    {titleLines.map((line, i) => (
+                        <span key={i}>
+                            {line}
+                            {i < titleLines.length - 1 && <br />}
+                        </span>
+                    ))}
+                </h2>
+                {config.description && (
+                    <p className="text-white/80 text-sm">{config.description}</p>
+                )}
+            </div>
+        </div>
+    )
+}

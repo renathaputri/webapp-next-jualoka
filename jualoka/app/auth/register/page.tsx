@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Mail, Lock, Eye, EyeOff, User, AlertCircle, ArrowRight, ChevronLeft, Info } from "lucide-react"
+import { Mail, Lock, Eye, EyeOff, Store, AlertCircle, ArrowRight, ChevronLeft, Info } from "lucide-react"
+import { saveOnboardingData } from "@/components/localStorage/OnboardingStorage"
 
 type RegisterData = {
     name: string
@@ -34,7 +35,7 @@ export default function RegisterPage() {
 
     function validate(): boolean {
         const newErrors: Record<string, string> = {}
-        if (!name.trim()) newErrors.name = "Nama lengkap wajib diisi."
+        if (!name.trim()) newErrors.name = "Nama toko wajib diisi."
         if (!email) {
             newErrors.email = "Email wajib diisi."
         } else if (!validateEmail(email)) {
@@ -61,11 +62,9 @@ export default function RegisterPage() {
         setIsLoading(true)
         await new Promise((r) => setTimeout(r, 600))
 
-        // Generate OTP
         const generatedOtp = generateOTP()
         setOtp(generatedOtp)
 
-        // Simpan ke localStorage untuk diverifikasi nanti
         const pendingData: RegisterData & { otp: string } = {
             name,
             email,
@@ -73,6 +72,7 @@ export default function RegisterPage() {
             otp: generatedOtp,
         }
         localStorage.setItem("jualoka_pending_register", JSON.stringify(pendingData))
+        saveOnboardingData({ storeName: name })
 
         setIsLoading(false)
     }
@@ -107,7 +107,6 @@ export default function RegisterPage() {
         )
     }
 
-    // Jika OTP sudah digenerate → tampilkan OTP box
     if (otp) {
         return (
             <div className="w-full max-w-md">
@@ -152,7 +151,6 @@ export default function RegisterPage() {
         <div className="w-full max-w-md">
             <div className="bg-white rounded-3xl shadow-xl shadow-black/5 border border-border/50 overflow-hidden">
 
-                {/* Header */}
                 <div className="px-6 pt-6 pb-2">
                     <Link
                         href="/auth/login"
@@ -167,19 +165,18 @@ export default function RegisterPage() {
                     </p>
                 </div>
 
-                {/* Form */}
                 <form onSubmit={handleSubmit} noValidate className="px-6 pb-6 pt-4 flex flex-col gap-4">
 
-                    {/* Nama */}
+                    {/* Nama Toko */}
                     <div className="flex flex-col gap-1.5">
-                        <label htmlFor="name" className="text-sm font-medium">Nama Lengkap</label>
+                        <label htmlFor="name" className="text-sm font-medium">Nama Toko</label>
                         <div className="relative">
-                            <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                            <Store className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                             <input
                                 id="name"
                                 type="text"
-                                autoComplete="name"
-                                placeholder="Nama lengkap Anda"
+                                autoComplete="organization"
+                                placeholder="Contoh: Toko Berkah UMKM"
                                 value={name}
                                 onChange={(e) => { setName(e.target.value); clearField("name") }}
                                 aria-invalid={!!errors.name}
