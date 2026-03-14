@@ -112,6 +112,7 @@ model Product {
 
 model Order {
   id               String      @id @default(cuid())
+  orderNumber      Int         @default(autoincrement())
   storeId          String
   store            Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   customerName     String
@@ -126,7 +127,7 @@ model OrderItem {
   orderId   String
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   quantity  Int
   price     Int
 }

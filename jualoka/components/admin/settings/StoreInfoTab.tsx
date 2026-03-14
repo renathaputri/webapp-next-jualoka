@@ -2,15 +2,20 @@
 
 import { useState, useEffect } from "react"
 import { Store, Phone, Link2, CheckCircle2, Pencil } from "lucide-react"
-import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 import { STORE_CATEGORIES, type StoreCategory } from "@/lib/categories"
+import Swal from "sweetalert2"
+
+import { useRouter } from "next/navigation"
 
 export function StoreInfoTab() {
+    const router = useRouter()
     const [isEditing, setIsEditing] = useState(true)
+    const [isDeleting, setIsDeleting] = useState(false)
     const [storeName, setStoreName] = useState("")
     const [slug, setSlug] = useState("")
     const [whatsapp, setWhatsapp] = useState("")
@@ -64,6 +69,41 @@ export function StoreInfoTab() {
         } catch (error) {
             console.error("Save error", error)
             toast.error("Terjadi kesalahan koneksi.")
+        }
+    }
+
+    async function handleStoreDelete() {
+        const result = await Swal.fire({
+            title: "Hapus Toko?",
+            text: "Beneran mau menghapus toko ini? Semua produk, pesanan, dan gambar akan ikut terhapus dari sistem dan tidak bisa dikembalikan.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#ef4444",
+            cancelButtonColor: "#71717a",
+            confirmButtonText: "Ya, Hapus Toko!",
+            cancelButtonText: "Batal"
+        })
+        
+        if (!result.isConfirmed) return
+        
+        setIsDeleting(true)
+        try {
+            const res = await fetch("/api/stores", {
+                method: "DELETE",
+                credentials: "include"
+            })
+            if (res.ok) {
+                toast.success("Toko berhasil dihapus.")
+                router.push("/admin/setup")
+            } else {
+                const data = await res.json()
+                toast.error(data.message || "Gagal menghapus toko.")
+                setIsDeleting(false)
+            }
+        } catch (error) {
+            console.error("Delete error", error)
+            toast.error("Terjadi kesalahan koneksi.")
+            setIsDeleting(false)
         }
     }
 
@@ -148,7 +188,15 @@ export function StoreInfoTab() {
                         <p className="text-sm font-medium">Hapus Toko</p>
                         <p className="text-xs text-muted-foreground">Tindakan ini tidak dapat dibatalkan.</p>
                     </div>
-                    <Button variant="destructive" size="sm" className="rounded-xl shrink-0">Hapus Toko</Button>
+                    <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        className="rounded-xl shrink-0"
+                        onClick={handleStoreDelete}
+                        disabled={isDeleting}
+                    >
+                        {isDeleting ? "Menghapus..." : "Hapus Toko"}
+                    </Button>
                 </CardContent>
             </Card>
         </div>

@@ -48,7 +48,7 @@ export default function CtaSection() {
                                     <ArrowRight className="h-4 w-4" />
                                 </Link>
                                 <Link
-                                    href="/toko/toko-berkah"
+                                    href="/toko"
                                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white/15 text-white font-semibold px-8 py-3.5 rounded-2xl hover:bg-white/25 transition-all border border-white/20 text-base"
                                 >
                                     <MessageCircle className="h-4 w-4" />

@@ -15,7 +15,7 @@ export function BusinessOverview({ data }: BusinessOverviewProps) {
             <KpiCard
                 label="Total Pendapatan"
                 value={`Rp ${(data.overview.revenue ?? 0).toLocaleString("id-ID")}`}
-                sub={`${data.overview.revenueGrowth > 0 ? "+" : ""}${data.overview.revenueGrowth ?? 0}% vs sebelumnya`}
+                sub={`${data.overview.revenueGrowth > 0 ? "+" : ""}${data.overview.revenueGrowth ?? 0}% dari sebelumnya`}
                 trend={data.overview.revenueGrowth >= 0 ? "up" : "down"}
                 icon={DollarSign}
                 gradient="from-emerald-500 to-teal-500"

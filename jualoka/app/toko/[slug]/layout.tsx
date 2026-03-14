@@ -1,6 +1,28 @@
 import Link from "next/link"
 import { ShoppingBag } from "lucide-react"
 import { CartBadge } from "@/components/toko/CartBadge"
+import type { Metadata } from 'next'
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+    const { slug } = await params
+    let storeName = slug.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
+    
+    try {
+        const url = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+        const storeRes = await fetch(`${url}/api/stores/${slug}`, { next: { revalidate: 60 } })
+        if (storeRes.ok) {
+            const data = await storeRes.json()
+            if (data.store?.name) {
+                storeName = data.store.name
+            }
+        }
+    } catch {}
+
+    return {
+        title: `${storeName} | Jualoka`,
+        description: `Selamat datang di toko online resmi ${storeName}.`
+    }
+}
 
 export default async function TokoLayout({
     children,
@@ -11,7 +33,7 @@ export default async function TokoLayout({
 }) {
     const { slug } = await params
 
-    const storeName = slug
+    let storeName = slug
         .split("-")
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(" ")
@@ -25,6 +47,9 @@ export default async function TokoLayout({
         if (storeRes.ok) {
             const data = await storeRes.json()
             storeId = data.store.id
+            if (data.store.name) {
+                storeName = data.store.name
+            }
         }
     } catch(e) { /* ignore */ }
 

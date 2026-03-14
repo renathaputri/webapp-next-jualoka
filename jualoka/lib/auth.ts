@@ -7,8 +7,8 @@ import nodemailer from "nodemailer";
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-        user: process.env.EMAIL_FROM,
-        pass: process.env.EMAIL_PASSWORD,
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
     },
 });
 
@@ -38,7 +38,7 @@ export const auth = betterAuth({
                 `;
 
                 await transporter.sendMail({
-                    from: `"Jualoka" <${process.env.EMAIL_FROM}>`,
+                    from: `"Jualoka" <${process.env.SMTP_USER}>`,
                     to: email,
                     subject,
                     html,

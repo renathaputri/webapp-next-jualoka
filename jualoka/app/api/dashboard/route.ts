@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyAuth } from "@/lib/auth"
+import { getProductStatus, PRODUCT_SUGGESTIONS } from "@/lib/productStatus"
 
 // GET /api/dashboard — real stats for the admin dashboard
 export async function GET(req: Request) {
@@ -61,11 +62,11 @@ export async function GET(req: Request) {
 
         const allProducts = await prisma.product.findMany({
             where: { storeId },
-            select: { id: true, name: true, price: true, cost: true }
+            select: { id: true, name: true, price: true, cost: true, createdAt: true }
         })
 
         const salesMap = new Map((allProductStats as any[]).map(s => [s.productId, s._sum.quantity || 0]))
-        
+
         const productsWithStatus = allProducts
             .map(p => ({
                 ...p,
@@ -74,33 +75,12 @@ export async function GET(req: Request) {
             .sort((a, b) => b.sold - a.sold)
 
         const topProducts = productsWithStatus.map((p, index) => {
-            const totalProducts = productsWithStatus.length
-            const percentile = totalProducts > 0 ? index / totalProducts : 1
             const qty = p.sold
-
-            let status = "Tidak Layak"
-            let suggestion = "Tidak ada penjualan. Perlu evaluasi apakah produk masih relevan."
-            
-            const cost = p.cost || 0
-            const profitPerItem = p.price - cost
-            const totalProfit = profitPerItem * qty
-
-            if (p.price < cost || totalProfit < 0) {
-                status = "Rugi"
-                suggestion = "Harga jual di bawah modal atau margin negatif. Evaluasi ulang harga atau biaya."
-            } else if (percentile < 0.2) {
-                status = "Laris"
-                suggestion = "Performa sangat baik. Pertimbangkan untuk meningkatkan margin atau bundel."
-            } else if (percentile < 0.6) {
-                status = "Stabil"
-                suggestion = "Pemintaan pasar stabil. Jaga ketersediaan stok."
-            } else if (percentile < 0.9) {
-                status = "Kurang Laku"
-                suggestion = "Penjualan rendah. Buat promo khusus atau perbaiki deskripsi produk."
-            } else {
-                status = "Tidak Layak"
-                suggestion = "Tidak ada penjualan. Perlu evaluasi apakah produk masih relevan."
-            }
+            const status = getProductStatus(
+                { price: p.price, cost: p.cost, sold: qty, createdAt: p.createdAt },
+                productsWithStatus,
+            )
+            const suggestion = PRODUCT_SUGGESTIONS[status] ?? "Tidak ada penjualan. Perlu evaluasi apakah produk masih relevan."
 
             return {
                 name: p.name,

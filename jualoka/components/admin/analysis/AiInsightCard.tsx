@@ -19,12 +19,12 @@ export function AiInsightCard({ aiInsight, isAiLoading, onGenerate }: AiInsightC
                         <Sparkles className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                        <h2 className="text-sm font-bold text-white">Gemini AI Insight</h2>
+                        <h2 className="text-sm font-bold text-white">Jualoka AI Insight</h2>
                         <p className="text-[11px] text-white/70">Analisis cerdas berdasarkan data toko Anda</p>
                     </div>
                 </div>
                 {!aiInsight && !isAiLoading && (
-                    <Button 
+                    <Button
                         onClick={onGenerate}
                         size="sm"
                         className="bg-white text-violet-700 hover:bg-violet-50 font-bold rounded-xl text-xs h-8 px-4 shadow-none transition-all"

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyAuth } from "@/lib/auth"
+import { deleteBlobImage } from "@/lib/vercelBlob"
 
 export async function POST(req: Request) {
     try {
@@ -89,6 +90,56 @@ export async function GET(req: Request) {
 
         return NextResponse.json({ store }, { status: 200 })
     } catch (error: any) {
+        if (error.message === "Missing or invalid token" || error.name === "JsonWebTokenError") {
+            return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+        }
+        return NextResponse.json({ message: "Internal server error" }, { status: 500 })
+    }
+}
+
+export async function DELETE(req: Request) {
+    try {
+        const userId = await verifyAuth(req)
+
+        const store = await prisma.store.findUnique({
+            where: { userId },
+            include: {
+                products: {
+                    select: { image: true }
+                }
+            }
+        })
+
+        if (!store) {
+            return NextResponse.json({ message: "Store not found" }, { status: 404 })
+        }
+
+        // Gather all Vercel Blob URLs associated with this store
+        const blobUrlsToDelete: string[] = []
+        
+        if (store.bannerImageUrl) {
+            blobUrlsToDelete.push(store.bannerImageUrl)
+        }
+
+        for (const product of store.products) {
+            if (product.image) {
+                blobUrlsToDelete.push(product.image)
+            }
+        }
+
+        // 1. Delete the store from the database (Cascades will delete products & orders in DB)
+        await prisma.store.delete({ where: { id: store.id } })
+
+        // 2. Delete all files from Vercel Blob concurrently
+        if (blobUrlsToDelete.length > 0) {
+            await Promise.allSettled(
+                blobUrlsToDelete.map(url => deleteBlobImage(url))
+            )
+        }
+
+        return NextResponse.json({ message: "Store and associated files deleted successfully" }, { status: 200 })
+    } catch (error: any) {
+        console.error("Store DELETE Error:", error)
         if (error.message === "Missing or invalid token" || error.name === "JsonWebTokenError") {
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
         }

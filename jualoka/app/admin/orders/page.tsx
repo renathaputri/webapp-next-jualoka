@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { toast } from "sonner"
 import {
     ShoppingBag,
     Search,
@@ -59,9 +60,9 @@ export default function AdminOrdersPage() {
                 const data = await res.json()
 
                 // Map API shape to Order shape that OrderCard expects
-                const mapped: Order[] = (data.orders || []).map((o: any, idx: number) => ({
+                const mapped: Order[] = (data.orders || []).map((o: any) => ({
                     id: o.id,
-                    orderNumber: `ORD-${String(idx + 1).padStart(3, "0")}`,
+                    orderNumber: `ORD-${String(o.orderNumber).padStart(3, "0")}`,
                     customer: o.customerName,
                     phone: o.customerWhatsapp,
                     status: o.status as OrderStatus,
@@ -83,6 +84,49 @@ export default function AdminOrdersPage() {
             }
         }
         fetchOrders()
+    }, [])
+
+    // ── Real-time via SSE ──────────────────────────────────────────────────
+    useEffect(() => {
+        const es = new EventSource("/api/orders/notify", { withCredentials: true })
+
+        es.addEventListener("new_order", (e) => {
+            try {
+                const raw = JSON.parse(e.data)
+                const newOrder: Order = {
+                    id: raw.id,
+                    orderNumber: `ORD-${String(raw.orderNumber || 0).padStart(3, "0")}`,
+                    customer: raw.customerName,
+                    phone: raw.customerWhatsapp,
+                    status: raw.status as OrderStatus,
+                    date: raw.createdAt,
+                    total: raw.orderItems.reduce((s: number, i: any) => s + i.price * i.quantity, 0),
+                    items: raw.orderItems.map((i: any) => ({
+                        id: i.id,
+                        name: i.product?.name ?? "Produk",
+                        qty: i.quantity,
+                        price: i.price,
+                    })),
+                }
+                setOrders(prev => [newOrder, ...prev])
+                toast.success("Pesanan baru masuk! 🛍️", {
+                    description: `Dari ${raw.customerName} · ${newOrder.items.length} item`,
+                    duration: 8000,
+                    action: {
+                        label: "Lihat",
+                        onClick: () => window.scrollTo({ top: 0, behavior: "smooth" }),
+                    },
+                })
+            } catch (err) {
+                console.error("SSE parse error", err)
+            }
+        })
+
+        es.onerror = () => {
+            // EventSource will auto-reconnect, nothing to do
+        }
+
+        return () => es.close()
     }, [])
 
     const stats = useMemo(() => {
@@ -171,7 +215,7 @@ export default function AdminOrdersPage() {
                             className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${filterStatus === s
                                 ? "bg-primary text-white shadow-sm"
                                 : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                            }`}
+                                }`}
                         >
                             {s === "semua" ? "Semua" : STATUS_CONFIG[s].label}
                             {s !== "semua" && (

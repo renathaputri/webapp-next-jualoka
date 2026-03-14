@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyAuth } from "@/lib/auth"
+import { deleteBlobImage } from "@/lib/vercelBlob"
 
 export async function POST(req: Request) {
     try {
@@ -25,6 +26,10 @@ export async function POST(req: Request) {
                 { message: "Store not found. Please complete store info first." },
                 { status: 404 }
             )
+        }
+
+        if (bannerImageUrl && store.bannerImageUrl && bannerImageUrl !== store.bannerImageUrl) {
+            await deleteBlobImage(store.bannerImageUrl)
         }
 
         const updatedStore = await prisma.store.update({

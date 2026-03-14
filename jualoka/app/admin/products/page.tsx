@@ -11,13 +11,15 @@ import {
     TrendingUp,
     AlertTriangle,
     Search,
-    ShoppingBag,
     BarChart2,
     Box,
+    ShoppingBag,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
+import { PRODUCT_STATUS_CONFIG, PRODUCT_STATUS_FALLBACK, getProductStatus } from "@/lib/productStatus"
+import Swal from "sweetalert2"
 
 type Product = {
     id: string
@@ -28,33 +30,10 @@ type Product = {
     description: string
     image: string | null
     totalSold30Days: number
+    createdAt: string
 }
 
-const statusConfig: Record<string, any> = {
-    "Laris": { label: "Laris", bg: "bg-emerald-500", text: "text-emerald-700", pill: "bg-emerald-50 ring-emerald-200 text-emerald-700" },
-    "Stabil": { label: "Stabil", bg: "bg-blue-500", text: "text-blue-700", pill: "bg-blue-50 ring-blue-200 text-blue-700" },
-    "Kurang Laku": { label: "Kurang Laku", bg: "bg-amber-500", text: "text-amber-700", pill: "bg-amber-50 ring-amber-200 text-amber-700" },
-    "Tidak Layak": { label: "Tidak Layak", bg: "bg-rose-500", text: "text-rose-700", pill: "bg-rose-50 ring-rose-200 text-rose-700" },
-    "Rugi": { label: "Rugi", bg: "bg-red-600", text: "text-red-800", pill: "bg-red-50 ring-red-300 text-red-800" },
-}
 
-function getStatus(product: Product, allProducts: Product[]): string {
-    const actualCost = product.cost || 0
-    const profitPerItem = product.price - actualCost
-    const totalProfit = profitPerItem * product.totalSold30Days
-
-    if (product.price < actualCost || totalProfit < 0) return "Rugi"
-    if (allProducts.length === 0) return "Tidak Layak"
-
-    const sortedBySold = [...allProducts].sort((a, b) => (b.totalSold30Days || 0) - (a.totalSold30Days || 0))
-    const index = sortedBySold.findIndex(p => (p.totalSold30Days || 0) === (product.totalSold30Days || 0))
-    const percentile = index / allProducts.length
-
-    if (percentile < 0.2) return "Laris"
-    if (percentile < 0.6) return "Stabil"
-    if (percentile < 0.9) return "Kurang Laku"
-    return "Tidak Layak"
-}
 
 function SkeletonCard() {
     return (
@@ -73,8 +52,11 @@ function SkeletonCard() {
 }
 
 function ProductCard({ product, onDelete, allProducts }: { product: Product; onDelete: (id: string, name: string) => void; allProducts: Product[] }) {
-    const status = getStatus(product, allProducts)
-    const s = statusConfig[status]
+    const statusKey = getProductStatus(
+        { price: product.price, cost: product.cost, sold: product.totalSold30Days, createdAt: product.createdAt },
+        allProducts.map(p => ({ price: p.price, cost: p.cost, sold: p.totalSold30Days, createdAt: p.createdAt })),
+    )
+    const s = PRODUCT_STATUS_CONFIG[statusKey] ?? PRODUCT_STATUS_FALLBACK
     const margin = product.cost && product.cost > 0
         ? Math.round(((product.price - product.cost) / product.price) * 100)
         : null
@@ -104,7 +86,7 @@ function ProductCard({ product, onDelete, allProducts }: { product: Product; onD
                 <div className="flex items-center gap-1.5">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ring-1 ring-inset ${s.pill}`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${s.bg} shrink-0`} />
-                        {s.label}
+                        {statusKey}
                     </span>
                     <span className={`ml-auto px-2 py-0.5 rounded-full text-[11px] font-bold ${product.stock === 0
                         ? "bg-rose-100 text-rose-600"
@@ -179,7 +161,19 @@ export default function ProductsPage() {
     useEffect(() => { fetchProducts() }, [])
 
     async function handleDelete(id: string, name: string) {
-        if (!confirm(`Hapus produk "${name}"?`)) return
+        const result = await Swal.fire({
+            title: "Hapus Produk?",
+            text: `Anda yakin ingin menghapus produk "${name}"?`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#ef4444",
+            cancelButtonColor: "#71717a",
+            confirmButtonText: "Ya, Hapus!",
+            cancelButtonText: "Batal"
+        })
+        
+        if (!result.isConfirmed) return
+        
         try {
             const res = await fetch(`/api/products/${id}`, { method: "DELETE", credentials: "include" })
             if (res.ok) {
@@ -248,7 +242,7 @@ export default function ProductsPage() {
                         <Input
                             placeholder="Cari produk..."
                             value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
                             className="pl-8 h-8 text-sm rounded-xl border-zinc-200 bg-white w-48"
                         />
                     </div>

@@ -2,10 +2,12 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Package, LayoutDashboard, ShoppingCart, Settings, Store, ChevronRight, LogOut, BarChart } from "lucide-react"
+import { Package, LayoutDashboard, ShoppingCart, Settings, Store, ChevronRight, LogOut, BarChart, Bell } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { authClient } from "@/lib/auth-client"
 import { Toaster } from "sonner"
+import { toast } from "sonner"
+import { useEffect } from "react"
 
 const navLinks = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -84,6 +86,49 @@ function AdminUserFooter() {
     )
 }
 
+/**
+ * OrderNotifier — listens to SSE for new orders and shows a toast
+ * on every admin page (not just the orders page).
+ * The orders page has its own listener that also updates the order list.
+ */
+function OrderNotifier() {
+    const pathname = usePathname()
+    // Only show the toast-only notifier when NOT on the orders page
+    // (the orders page has its own SSE handler that updates the list too)
+    const isOrdersPage = pathname === "/admin/orders"
+
+    useEffect(() => {
+        if (isOrdersPage) return // orders page handles its own SSE
+
+        const es = new EventSource("/api/orders/notify", { withCredentials: true })
+
+        es.addEventListener("new_order", (e) => {
+            try {
+                const raw = JSON.parse(e.data)
+                const itemCount = raw.orderItems?.length ?? 0
+                toast.success("🛍️ Pesanan baru masuk!", {
+                    description: `Dari ${raw.customerName} · ${itemCount} item`,
+                    duration: 10000,
+                    action: {
+                        label: "Lihat Pesanan",
+                        onClick: () => { window.location.href = "/admin/orders" },
+                    },
+                })
+            } catch (err) {
+                console.error("SSE parse error", err)
+            }
+        })
+
+        es.onerror = () => {
+            // EventSource will auto-reconnect — no action needed
+        }
+
+        return () => es.close()
+    }, [isOrdersPage])
+
+    return null
+}
+
 export default function AdminLayout({
     children,
 }: {
@@ -139,6 +184,8 @@ export default function AdminLayout({
                 </main>
             </div>
         </div>
+        {/* Global real-time order notifier — active on all admin pages */}
+        <OrderNotifier />
         <Toaster richColors position="top-right" />
         </>
     )

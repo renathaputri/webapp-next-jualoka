@@ -1,6 +1,7 @@
 import Link from "next/link"
-import { TrendingUp, TrendingDown, ArrowUpRight } from "lucide-react"
+import { TrendingUp, ArrowUpRight } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { PRODUCT_STATUS_CONFIG, PRODUCT_STATUS_FALLBACK } from "@/lib/productStatus"
 
 
 export function ProductAnalysis({ data }: {
@@ -26,13 +27,7 @@ export function ProductAnalysis({ data }: {
                     {list.length === 0 ? (
                         <p className="text-xs text-muted-foreground text-center py-8 italic">Belum ada data penjualan.</p>
                     ) : list.map((p, i) => {
-                        const statusCfg: Record<string, any> = {
-                            "Laris": { label: "Laris", bg: "bg-emerald-500", pill: "bg-emerald-50 ring-emerald-200 text-emerald-700" },
-                            "Stabil": { label: "Stabil", bg: "bg-blue-500", pill: "bg-blue-50 ring-blue-200 text-blue-700" },
-                            "Kurang Laku": { label: "Kurang Laku", bg: "bg-amber-500", pill: "bg-amber-50 ring-amber-200 text-amber-700" },
-                            "Tidak Layak": { label: "Tidak Layak", bg: "bg-rose-500", pill: "bg-rose-50 ring-rose-200 text-rose-700" },
-                            "Rugi": { label: "Rugi", bg: "bg-red-600", pill: "bg-red-50 ring-red-300 text-red-800" },
-                        }[p.status] || { label: p.status || "Unknown", bg: "bg-zinc-500", pill: "bg-zinc-50 ring-zinc-200 text-zinc-700" }
+                        const statusCfg = PRODUCT_STATUS_CONFIG[p.status as keyof typeof PRODUCT_STATUS_CONFIG] ?? PRODUCT_STATUS_FALLBACK
 
                         return (
                             <div key={i} className="rounded-xl border border-border/50 bg-white p-3 hover:bg-zinc-50/50 transition-colors">
@@ -45,7 +40,7 @@ export function ProductAnalysis({ data }: {
                                             <p className="text-xs font-semibold leading-tight truncate">{p.name}</p>
                                             <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold ring-1 ring-inset whitespace-nowrap ${statusCfg.pill}`}>
                                                 <span className={`h-1.5 w-1.5 rounded-full ${statusCfg.bg} shrink-0`} />
-                                                {statusCfg.label}
+                                                {p.status}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-2 mt-1">

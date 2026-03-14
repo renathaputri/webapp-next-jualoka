@@ -19,7 +19,7 @@ export function SalesChart({ data }: {
 }) {
     const history = data?.salesHistory || []
     const total = data?.totalRevenue || 0
-    
+
     return (
         <div className="grid lg:grid-cols-3 gap-5">
             <Card className="border-0 shadow-sm bg-white lg:col-span-2">
@@ -58,9 +58,9 @@ export function SalesChart({ data }: {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="px-5 pb-5 flex flex-col gap-2.5">
-                    {quickActions.map((action) => (
+                    {quickActions.map((action, idx) => (
                         <Link
-                            key={action.href}
+                            key={action.href + idx}
                             href={action.href}
                             className="flex items-center gap-3 rounded-xl px-4 py-3 bg-muted/40 hover:bg-muted/70 transition-colors group"
                         >

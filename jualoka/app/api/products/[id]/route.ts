@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyAuth } from "@/lib/auth"
+import { deleteBlobImage } from "@/lib/vercelBlob"
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
@@ -16,6 +17,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         const existingProduct = await prisma.product.findUnique({ where: { id: productId } })
         if (!existingProduct || existingProduct.storeId !== store.id) {
             return NextResponse.json({ message: "Product not found or unauthorized" }, { status: 404 })
+        }
+
+        // Deleting the old image from Vercel Blob if a new one is uploaded
+        if (image && existingProduct.image && image !== existingProduct.image) {
+            await deleteBlobImage(existingProduct.image)
         }
 
         const updatedProduct = await prisma.product.update({
@@ -51,6 +57,9 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
         if (!existingProduct || existingProduct.storeId !== store.id) {
             return NextResponse.json({ message: "Product not found or unauthorized" }, { status: 404 })
         }
+
+        // Delete the image from Vercel Blob before deleting from the database
+        await deleteBlobImage(existingProduct.image)
 
         await prisma.product.delete({ where: { id: productId } })
 

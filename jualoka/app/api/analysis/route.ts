@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyAuth } from "@/lib/auth"
+import { getProductStatus, PRODUCT_SUGGESTIONS, NEEDS_ATTENTION_STATUSES } from "@/lib/productStatus"
 
 export async function GET(req: Request) {
     try {
@@ -82,31 +83,11 @@ export async function GET(req: Request) {
             orderBy: { _sum: { quantity: "desc" } }
         })
 
-        // Fetch previous product stats for trend calculation
-        const previousProductStats = await prisma.orderItem.groupBy({
-            by: ["productId"],
-            where: {
-                order: { storeId, status: "selesai", createdAt: { gte: prevStartDate, lt: startDate } }
-            },
-            _sum: { quantity: true }
-        })
-        const prevProductSalesMap = new Map((previousProductStats as any[]).map(ps => [ps.productId, ps._sum.quantity || 0]))
-
-        // Calculate consistency (number of distinct days sold)
-        const productDaysSold = new Map<string, Set<string>>()
-        currentOrders.forEach(order => {
-            const dateStr = new Date(order.createdAt).toDateString()
-            order.orderItems.forEach(item => {
-                const pId = item.productId
-                if (!productDaysSold.has(pId)) productDaysSold.set(pId, new Set())
-                productDaysSold.get(pId)!.add(dateStr)
-            })
-        })
 
         // Fetch all products to know which ones sold 0, and include price and cost
         const allProducts = await prisma.product.findMany({
             where: { storeId },
-            select: { id: true, name: true, price: true, cost: true }
+            select: { id: true, name: true, price: true, cost: true, createdAt: true }
         })
 
         const productSalesMap = new Map((productStats as any[]).map(ps => [ps.productId, ps._sum.quantity || 0]))
@@ -115,60 +96,27 @@ export async function GET(req: Request) {
             .map(p => ({ ...p, sold: productSalesMap.get(p.id) || 0 }))
             .sort((a, b) => b.sold - a.sold)
 
-        const productsWithStatus = sortedProducts.map((p, index) => {
+        const productsWithStatus = sortedProducts.map((p) => {
             const sold = p.sold
-            const totalProducts = sortedProducts.length
+            const status = getProductStatus(
+                { price: p.price, cost: p.cost, sold, createdAt: p.createdAt },
+                sortedProducts,
+            )
+            const suggestion = PRODUCT_SUGGESTIONS[status] ?? "Tidak ada penjualan. Perlu evaluasi apakah produk masih relevan."
 
-            // 1. Rumus menentukan ranking penjualan produk (Percentile)
-            const percentile = totalProducts > 0 ? (index + 1) / totalProducts : 1
-
-            let ranking = "Tidak Layak"
-            if (percentile <= 0.2) {
-                ranking = "Laris"
-            } else if (percentile <= 0.6) {
-                ranking = "Stabil"
-            } else if (percentile <= 0.9) {
-                ranking = "Kurang Laku"
-            } else {
-                ranking = "Tidak Layak"
-            }
-
-            // 2. Rumus menentukan status performa produk
-            const cost = p.cost || 0
-            const profitPerItem = p.price - cost
-            const totalProfit = profitPerItem * sold
-
-            const prevSold = prevProductSalesMap.get(p.id) || 0
-            const trendDecreasing = prevSold > 0 && sold < prevSold
-
-            const daysSold = productDaysSold.get(p.id)?.size || 0
-            const consistent = daysSold > Math.max(1, days * 0.1) // minimal dijual di lebih dari 10% hari dalam periode
-
-            let status = "Tidak Layak"
-            let suggestion = "Tidak ada penjualan. Perlu evaluasi apakah produk masih relevan."
-
-            if (totalProfit < 0) {
-                status = "Rugi"
-                suggestion = "Total profit negatif. Evaluasi ulang harga jual atau biaya modal."
-            } else if (ranking === "Laris" && totalProfit > 0) {
-                status = "Laris"
-                suggestion = "Performa sangat baik. Pertimbangkan untuk meningkatkan margin atau bundel."
-            } else if ((ranking === "Stabil" || ranking === "Laris") && consistent) {
-                status = "Stabil"
-                suggestion = "Permintaan pasar stabil. Jaga ketersediaan stok."
-            } else if (ranking === "Kurang Laku" || trendDecreasing) {
-                status = "Kurang Laku"
-                suggestion = "Penjualan rendah atau trend menurun. Buat promo khusus atau perbaiki deskripsi produk."
-            } else {
-                status = "Tidak Layak"
-                suggestion = "Penjualan sangat rendah dan tidak konsisten. Perlu evaluasi relevansi produk."
-            }
-
-            return { name: p.name, sold, ranking, status, suggestion }
+            return { name: p.name, sold, status, suggestion }
         })
 
-        const topProducts = [...productsWithStatus].sort((a, b) => b.sold - a.sold).slice(0, 5)
-        const worstProducts = [...productsWithStatus].sort((a, b) => a.sold - b.sold).slice(0, 5)
+        // Top performers: highest sold, only include those with at least 1 sale
+        const topProducts = [...productsWithStatus]
+            .sort((a, b) => b.sold - a.sold)
+            .filter(p => p.sold > 0)
+            .slice(0, 5)
+
+        // Needs attention: only products with concerning status badges
+        const worstProducts = productsWithStatus
+            .filter(p => NEEDS_ATTENTION_STATUSES.includes(p.status as (typeof NEEDS_ATTENTION_STATUSES)[number]))
+            .sort((a, b) => a.sold - b.sold)
 
         const customerOrders = new Map<string, number>()
         currentOrders.forEach(order => {

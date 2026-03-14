@@ -24,7 +24,7 @@ function CheckoutSuccessContent() {
                         <CheckCircle2 className="h-12 w-12 text-emerald-500" strokeWidth={1.5} />
                     </div>
                     <div className="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-lg">
-                        🎉
+
                     </div>
                 </div>
 

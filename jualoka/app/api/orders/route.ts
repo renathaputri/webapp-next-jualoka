@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyAuth } from "@/lib/auth"
+import { notifyNewOrder } from "@/lib/sseRegistry"
+import { sendOrderEmail } from "@/lib/mailer"
 
 export async function GET(req: Request) {
     try {
@@ -40,7 +42,7 @@ export async function POST(req: Request) {
 
         const store = await prisma.store.findUnique({
             where: { id: storeId },
-            select: { id: true, isOpen: true }
+            select: { id: true, isOpen: true, name: true, user: { select: { email: true } } }
         })
         if (!store) {
             return NextResponse.json({ message: "Store not found" }, { status: 404 })
@@ -92,15 +94,35 @@ export async function POST(req: Request) {
             }
         })
 
-        // Decrement stock in parallel for better performance
-        await Promise.all(
-            (items as { productId: string; quantity: number }[]).map((item) =>
+        // Decrement stock + fire notifications in parallel for best performance
+        await Promise.all([
+            // Decrement stock
+            ...(items as { productId: string; quantity: number }[]).map((item) =>
                 prisma.product.update({
                     where: { id: item.productId },
                     data: { stock: { decrement: item.quantity } }
                 })
-            )
-        )
+            ),
+            // Real-time SSE notification to connected admin dashboard
+            Promise.resolve(notifyNewOrder(storeId, newOrder)),
+            // Email to seller
+            sendOrderEmail(
+                store.user!.email,
+                {
+                    id: newOrder.id,
+                    orderNumber: `ORD-${String(newOrder.orderNumber).padStart(3, "0")}`,
+                    customerName: newOrder.customerName,
+                    customerWhatsapp: newOrder.customerWhatsapp,
+                    createdAt: newOrder.createdAt.toISOString(),
+                    orderItems: newOrder.orderItems.map((i: any) => ({
+                        name: i.product?.name ?? "Produk",
+                        quantity: i.quantity,
+                        price: i.price,
+                    })),
+                },
+                store.name
+            ),
+        ])
 
         return NextResponse.json({ message: "Order placed successfully", order: newOrder }, { status: 201 })
     } catch (error) {
