@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../lib/generated/prisma"
@@ -15,18 +9,17 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String?
   name          String
-  email         String   @unique
-  emailVerified Boolean
-  passwordHash  String? // Retained if needed, but better auth uses Account
+  createdAt     DateTime  @default(now())
   image         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  sessions Session[]
-  accounts Account[]
-  store    Store?
+  updatedAt     DateTime  @updatedAt
+  emailVerified Boolean
+  accounts      Account[]
+  sessions      Session[]
+  store         Store?
 }
 
 model Session {
@@ -43,19 +36,19 @@ model Session {
 
 model Account {
   id                    String    @id @default(cuid())
-  accountId             String
-  providerId            String
   userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accessToken           String?   @db.Text
-  refreshToken          String?   @db.Text
-  idToken               String?   @db.Text
-  accessTokenExpiresAt  DateTime?
-  refreshTokenExpiresAt DateTime?
   scope                 String?
-  password              String?   @db.Text
+  accessToken           String?
+  accessTokenExpiresAt  DateTime?
+  accountId             String
   createdAt             DateTime  @default(now())
+  idToken               String?
+  password              String?
+  providerId            String
+  refreshToken          String?
+  refreshTokenExpiresAt DateTime?
   updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Verification {
@@ -68,66 +61,62 @@ model Verification {
 }
 
 model Store {
-  id             String  @id @default(cuid())
-  userId         String  @unique
-  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String    @id @default(cuid())
+  userId         String    @unique
   name           String
-  slug           String  @unique
+  slug           String    @unique
   whatsappNumber String
-  isOpen         Boolean @default(true)
-
-  bannerEnabled  Boolean @default(true)
-  bannerBadge    String? @default("Toko Online Resmi")
-  bannerTitle    String? @default("Temukan Produk Terbaik\nKualitas Terjamin")
-  bannerDesc     String? @default("Selamat datang di toko kami! Pesan sekarang dengan mudah dan aman langsung via WhatsApp.")
-  bannerTheme    String  @default("blue")
-  bannerGradient String? @default("from-[#1d4ed8] to-[#3b82f6]")
-  bannerImageUrl String? @default("https://images.unsplash.com/photo-1472851294608-062f824d29cc?q=80&w=1000&auto=format&fit=crop")
-  bannerLayout   String  @default("left")
-  bannerOpacity  Int     @default(10)
-
-  category String?
-
-  products Product[]
-  orders   Order[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  bannerEnabled  Boolean   @default(true)
+  bannerBadge    String?   @default("Toko Online Resmi")
+  bannerTitle    String?   @default("Temukan Produk Terbaik\nKualitas Terjamin")
+  bannerDesc     String?   @default("Selamat datang di toko kami! Pesan sekarang dengan mudah dan aman langsung via WhatsApp.")
+  bannerTheme    String    @default("blue")
+  bannerGradient String?   @default("from-[#1d4ed8] to-[#3b82f6]")
+  bannerImageUrl String?   @default("https://images.unsplash.com/photo-1472851294608-062f824d29cc?q=80&w=1000&auto=format&fit=crop")
+  bannerLayout   String    @default("left")
+  bannerOpacity  Int       @default(10)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  category       String?
+  isOpen         Boolean   @default(true)
+  orders         Order[]
+  products       Product[]
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Product {
   id          String      @id @default(cuid())
   storeId     String
-  store       Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   name        String
   price       Int
   cost        Int?
   description String
   image       String?
   stock       Int         @default(0)
-  orderItems  OrderItem[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+  orderItems  OrderItem[]
+  store       Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
 }
 
 model Order {
   id               String      @id @default(cuid())
-  orderNumber      Int         @default(autoincrement())
   storeId          String
-  store            Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   customerName     String
   customerWhatsapp String
-  status           String      @default("baru")
-  orderItems       OrderItem[]
   createdAt        DateTime    @default(now())
+  status           String      @default("baru")
+  orderNumber      Int         @default(autoincrement())
+  store            Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orderItems       OrderItem[]
 }
 
 model OrderItem {
   id        String  @id @default(cuid())
   orderId   String
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   quantity  Int
   price     Int
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }

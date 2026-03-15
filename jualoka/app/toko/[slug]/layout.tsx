@@ -6,7 +6,7 @@ import type { Metadata } from 'next'
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const { slug } = await params
     let storeName = slug.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
-    
+
     try {
         const url = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
         const storeRes = await fetch(`${url}/api/stores/${slug}`, { next: { revalidate: 60 } })
@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
                 storeName = data.store.name
             }
         }
-    } catch {}
+    } catch { }
 
     return {
         title: `${storeName} | Jualoka`,
@@ -51,7 +51,7 @@ export default async function TokoLayout({
                 storeName = data.store.name
             }
         }
-    } catch(e) { /* ignore */ }
+    } catch (e) { /* ignore */ }
 
     return (
         <div className="min-h-screen bg-[#f8fafb] flex flex-col">
@@ -60,8 +60,10 @@ export default async function TokoLayout({
                 <div className="max-w-6xl mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
                     {/* Logo/Store name */}
                     <Link href={`/toko/${slug}`} className="flex items-center gap-2.5 group">
-                        <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
-                            <ShoppingBag className="h-4.5 w-4.5 text-white" />
+                        <div className="h-9 w-9 rounded-xl bg-[#fac023] flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow shrink-0">
+                            <span className="font-bold text-[#1a1a1a] text-base leading-none">
+                                {storeName.charAt(0).toUpperCase()}
+                            </span>
                         </div>
                         <span className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">{storeName}</span>
                     </Link>

@@ -182,7 +182,7 @@ export default function CartPage({
                     {/* Items */}
                     <div className="lg:col-span-3 space-y-3">
                         {items.map((item) => (
-                            <div key={item.id} className="bg-white rounded-2xl p-4 sm:p-5 border border-border/50 shadow-sm hover:shadow-md transition-shadow flex gap-4 items-center">
+                            <div key={item.id} className="bg-white rounded-2xl p-4 border border-border/50 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
                                 {item.image ? (
                                     <img 
                                         src={item.image} 
