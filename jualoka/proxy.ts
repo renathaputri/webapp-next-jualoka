@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
-const AUTH_COOKIE = process.env.AUTH_COOKIE
+const AUTH_COOKIE = process.env.AUTH_COOKIE as string
 
 export function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl
