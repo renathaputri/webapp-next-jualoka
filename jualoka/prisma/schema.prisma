@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String?
+  name          String
+  createdAt     DateTime  @default(now())
+  image         String?
+  updatedAt     DateTime  @updatedAt
+  emailVerified Boolean
+  accounts      Account[]
+  sessions      Session[]
+  store         Store?
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  scope                 String?
+  accessToken           String?
+  accessTokenExpiresAt  DateTime?
+  accountId             String
+  createdAt             DateTime  @default(now())
+  idToken               String?
+  password              String?
+  providerId            String
+  refreshToken          String?
+  refreshTokenExpiresAt DateTime?
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Verification {
+  id         String    @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+}
+
+model Store {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  name           String
+  slug           String    @unique
+  whatsappNumber String
+  bannerEnabled  Boolean   @default(true)
+  bannerBadge    String?   @default("Toko Online Resmi")
+  bannerTitle    String?   @default("Temukan Produk Terbaik\nKualitas Terjamin")
+  bannerDesc     String?   @default("Selamat datang di toko kami! Pesan sekarang dengan mudah dan aman langsung via WhatsApp.")
+  bannerTheme    String    @default("blue")
+  bannerGradient String?   @default("from-[#1d4ed8] to-[#3b82f6]")
+  bannerImageUrl String?   @default("https://images.unsplash.com/photo-1472851294608-062f824d29cc?q=80&w=1000&auto=format&fit=crop")
+  bannerLayout   String    @default("left")
+  bannerOpacity  Int       @default(10)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  category       String?
+  isOpen         Boolean   @default(true)
+  orders         Order[]
+  products       Product[]
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Product {
+  id          String      @id @default(cuid())
+  storeId     String
+  name        String
+  price       Int
+  cost        Int?
+  description String
+  image       String?
+  stock       Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  orderItems  OrderItem[]
+  store       Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id               String      @id @default(cuid())
+  storeId          String
+  customerName     String
+  customerWhatsapp String
+  createdAt        DateTime    @default(now())
+  status           String      @default("baru")
+  orderNumber      Int         @default(autoincrement())
+  store            Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orderItems       OrderItem[]
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Int
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
