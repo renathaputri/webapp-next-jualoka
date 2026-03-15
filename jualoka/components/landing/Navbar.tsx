@@ -27,7 +27,7 @@ export default function Navbar() {
                         height={32}
                         className="rounded-xl"
                     />
-                    <span className="font-bold text-lg text-foreground">Jualoka</span>
+                    <span className="font-bold text-lg text-primary text-foreground">Jualoka</span>
                 </Link>
 
                 {/* Nav links desktop */}

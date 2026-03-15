@@ -1,8 +1,10 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
-import { Package, LayoutDashboard, ShoppingCart, Settings, Store, ChevronRight, LogOut, BarChart, Bell } from "lucide-react"
+import { Package, LayoutDashboard, ShoppingCart, Settings, ChevronRight, LogOut, BarChart, Menu, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { authClient } from "@/lib/auth-client"
 import { Toaster } from "sonner"
@@ -17,7 +19,7 @@ const navLinks = [
     { href: "/admin/settings", label: "Store Settings", icon: Settings },
 ]
 
-function SidebarNav() {
+function SidebarNav({ onClose }: { onClose?: () => void }) {
     const pathname = usePathname()
 
     return (
@@ -28,6 +30,7 @@ function SidebarNav() {
                     <Link
                         key={href}
                         href={href}
+                        onClick={onClose}
                         className={cn(
                             "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 group",
                             isActive
@@ -45,12 +48,8 @@ function SidebarNav() {
     )
 }
 
-// type UserInfo = { name: string; email: string } | null
-
 function AdminUserFooter() {
     const router = useRouter()
-    
-    // Better Auth hook takes care of loading and session state automatically
     const { data: session } = authClient.useSession()
     const user = session?.user
 
@@ -59,15 +58,15 @@ function AdminUserFooter() {
         router.push("/auth/login")
     }
 
-    const initials = user?.name
-        ? user.name.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase()
+    const initial = user?.name
+        ? user.name.trim()[0].toUpperCase()
         : "A"
 
     return (
         <div className="p-4 border-t border-white/10">
             <div className="flex items-center gap-3 rounded-xl px-3 py-2 bg-white/10">
                 <div className="h-8 w-8 rounded-full bg-[#fac023] flex items-center justify-center text-[#1a1a1a] font-bold text-sm shrink-0">
-                    {initials}
+                    {initial}
                 </div>
                 <div className="min-w-0 flex-1">
                     <p className="text-white text-sm font-medium truncate">{user?.name ?? "Admin"}</p>
@@ -86,19 +85,12 @@ function AdminUserFooter() {
     )
 }
 
-/**
- * OrderNotifier — listens to SSE for new orders and shows a toast
- * on every admin page (not just the orders page).
- * The orders page has its own listener that also updates the order list.
- */
 function OrderNotifier() {
     const pathname = usePathname()
-    // Only show the toast-only notifier when NOT on the orders page
-    // (the orders page has its own SSE handler that updates the list too)
     const isOrdersPage = pathname === "/admin/orders"
 
     useEffect(() => {
-        if (isOrdersPage) return // orders page handles its own SSE
+        if (isOrdersPage) return
 
         const es = new EventSource("/api/orders/notify", { withCredentials: true })
 
@@ -119,9 +111,7 @@ function OrderNotifier() {
             }
         })
 
-        es.onerror = () => {
-            // EventSource will auto-reconnect — no action needed
-        }
+        es.onerror = () => {}
 
         return () => es.close()
     }, [isOrdersPage])
@@ -129,64 +119,100 @@ function OrderNotifier() {
     return null
 }
 
-export default function AdminLayout({
-    children,
-}: {
-    children: React.ReactNode
-}) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+    const [mobileOpen, setMobileOpen] = useState(false)
+
     return (
         <>
-        <div className="flex min-h-screen bg-[#f8fafb]">
-            {/* Sidebar */}
-            <aside className="hidden md:flex w-64 flex-col fixed inset-y-0 left-0 z-50">
-                <div className="flex flex-col h-full bg-gradient-to-b from-[#1a7035] to-[#218b42] shadow-xl">
-                    {/* Logo */}
-                    <div className="flex items-center gap-3 px-6 py-6 border-b border-white/10">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 shadow-inner">
-                            <Store className="h-5 w-5 text-white" />
+            <div className="flex min-h-screen bg-[#f8fafb]">
+                {/* Sidebar desktop */}
+                <aside className="hidden md:flex w-64 flex-col fixed inset-y-0 left-0 z-50">
+                    <div className="flex flex-col h-full bg-gradient-to-b from-[#1a7035] to-[#218b42] shadow-xl">
+                        <div className="flex items-center gap-3 px-6 py-6 border-b border-white/10">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 shadow-inner overflow-hidden">
+                                <Image src="/logo.svg" alt="Jualoka" width={36} height={36} className="rounded-xl" />
+                            </div>
+                            <div>
+                                <p className="font-bold text-white text-base leading-none">Jualoka</p>
+                                <p className="text-white/50 text-xs mt-0.5">Admin Panel</p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="font-bold text-white text-base leading-none">Jualoka</p>
-                            <p className="text-white/50 text-xs mt-0.5">Admin Panel</p>
+                        <div className="flex-1 overflow-y-auto px-4 py-6">
+                            <SidebarNav />
                         </div>
+                        <AdminUserFooter />
                     </div>
+                </aside>
 
-                    {/* Nav */}
-                    <div className="flex-1 overflow-y-auto px-4 py-6">
-                        <SidebarNav />
-                    </div>
+                {/* Mobile drawer */}
+                {mobileOpen && (
+                    <>
+                        <div
+                            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden"
+                            onClick={() => setMobileOpen(false)}
+                        />
+                        <aside className="fixed inset-y-0 right-0 z-50 w-72 flex flex-col md:hidden bg-gradient-to-b from-[#1a7035] to-[#218b42] shadow-2xl">
+                            <div className="flex items-center justify-between px-6 py-6 border-b border-white/10">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 shadow-inner overflow-hidden">
+                                        <Image src="/logo.svg" alt="Jualoka" width={36} height={36} className="rounded-xl" />
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-white text-base leading-none">Jualoka</p>
+                                        <p className="text-white/50 text-xs mt-0.5">Admin Panel</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setMobileOpen(false)}
+                                    className="text-white/60 hover:text-white transition-colors p-1"
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto px-4 py-6">
+                                <SidebarNav onClose={() => setMobileOpen(false)} />
+                            </div>
+                            <AdminUserFooter />
+                        </aside>
+                    </>
+                )}
 
-                    {/* Footer */}
-                    <AdminUserFooter />
+                {/* Main */}
+                <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
+                    <header className={cn(
+                        "h-16 border-b border-border/50 bg-white/80 backdrop-blur-sm sticky top-0 z-40 flex items-center px-6 shadow-sm",
+                        mobileOpen && "md:flex hidden"
+                    )}>
+                        {/* Logo mobile */}
+                        <div className="flex items-center gap-2 md:hidden">
+                            <Image src="/logo.svg" alt="Jualoka" width={32} height={32} className="rounded-xl" />
+                            <span className="font-bold text-primary">Jualoka</span>
+                        </div>
+
+                        <div className="ml-auto flex items-center gap-3">
+                            {/* Avatar desktop */}
+                            <div className="hidden md:flex h-8 w-8 rounded-full bg-[#fac023] items-center justify-center text-[#1a1a1a] font-bold text-sm">
+                                A
+                            </div>
+                            {/* Hamburger mobile */}
+                            <button
+                                type="button"
+                                onClick={() => setMobileOpen(true)}
+                                className="md:hidden p-2 rounded-xl hover:bg-muted/50 transition-colors"
+                                aria-label="Buka menu"
+                            >
+                                <Menu className="h-5 w-5" />
+                            </button>
+                        </div>
+                    </header>
+
+                    <main className="flex-1 p-6 md:p-8">
+                        {children}
+                    </main>
                 </div>
-            </aside>
-
-            {/* Main */}
-            <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
-                {/* Top bar */}
-                <header className="h-16 border-b border-border/50 bg-white/80 backdrop-blur-sm sticky top-0 z-40 flex items-center px-6 shadow-sm">
-                    <div className="flex items-center gap-2 md:hidden">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                            <Store className="h-4 w-4 text-white" />
-                        </div>
-                        <span className="font-bold text-primary">Jualoka</span>
-                    </div>
-                    <div className="ml-auto flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-[#fac023] flex items-center justify-center text-[#1a1a1a] font-bold text-sm">
-                            A
-                        </div>
-                    </div>
-                </header>
-
-                {/* Content */}
-                <main className="flex-1 p-6 md:p-8">
-                    {children}
-                </main>
             </div>
-        </div>
-        {/* Global real-time order notifier — active on all admin pages */}
-        <OrderNotifier />
-        <Toaster richColors position="top-right" />
+            <OrderNotifier />
+            <Toaster richColors position="top-right" />
         </>
     )
 }
