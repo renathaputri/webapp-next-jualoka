@@ -109,7 +109,7 @@ export function StoreInfoTab() {
     }
 
     return (
-        <div className="flex flex-col gap-6 max-w-xl">
+        <div className="flex flex-col gap-6 w-full">
             <Card className="border-0 shadow-sm bg-white">
                 <CardHeader className="px-6 pt-6 pb-5 border-b border-border/50">
                     <CardTitle className="text-base">Informasi Umum</CardTitle>
