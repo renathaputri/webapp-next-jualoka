@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use, useRef, useCallback } from "react"
 import { getCart, updateCartQuantity, removeFromCart, clearCart, CartItem } from "@/lib/cartApi"
-import { findBestVoucher, findVoucherByCode, redeemVoucher, Voucher } from "@/lib/voucherStore"
+import { Voucher } from "@/lib/voucherStore"
 import { VoucherModal } from "@/components/toko/VoucherModal"
 import Link from "next/link"
 import { ArrowLeft, Minus, Plus, Trash2, ShoppingBag, MessageCircle, AlertCircle, Ticket, X, Check, Loader2 } from "lucide-react"
@@ -82,18 +82,40 @@ export default function CartPage({
     const finalTotal = Math.max(0, total - discountAmount)
 
     // Handle voucher apply
-    const handleApplyVoucher = () => {
+    const handleApplyVoucher = async () => {
+        if (!storeId || !voucherCode.trim()) {
+            setVoucherError("Masukkan kode voucher")
+            return
+        }
         setVoucherApplying(true)
         setVoucherError("")
-        const { voucher, error } = findVoucherByCode(voucherCode, total)
-        if (voucher) {
-            setAppliedVoucher(voucher)
-            setVoucherError("")
-        } else {
-            setVoucherError(error)
+
+        try {
+            const res = await fetch("/api/vouchers/validate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    storeId,
+                    code: voucherCode,
+                    totalTransaction: total,
+                    customerName: form.name,
+                    customerWhatsapp: form.whatsapp
+                })
+            })
+            const data = await res.json()
+            if (res.ok) {
+                setAppliedVoucher(data.voucher)
+                setVoucherError("")
+            } else {
+                setVoucherError(data.message || "Voucher tidak valid")
+                setAppliedVoucher(null)
+            }
+        } catch (error) {
+            setVoucherError("Terjadi kesalahan saat memvalidasi voucher")
             setAppliedVoucher(null)
+        } finally {
+            setVoucherApplying(false)
         }
-        setVoucherApplying(false)
     }
 
     const handleRemoveVoucher = () => {
@@ -119,7 +141,8 @@ export default function CartPage({
                 items: items.map(it => ({
                     productId: it.id,
                     quantity: it.quantity
-                }))
+                })),
+                voucherId: appliedVoucher ? appliedVoucher.id : undefined
             }
 
             const orderRes = await fetch("/api/orders", {
@@ -128,9 +151,10 @@ export default function CartPage({
                 body: JSON.stringify(orderPayload)
             })
 
+            const resData = await orderRes.json()
+
             if (!orderRes.ok) {
-                const errData = await orderRes.json()
-                setCheckoutError(errData.message || "Gagal membuat pesanan.")
+                setCheckoutError(resData.message || "Gagal membuat pesanan.")
                 setIsLoading(false)
                 return
             }
@@ -146,8 +170,6 @@ export default function CartPage({
                 msg += `\n🎟️ *Voucher: ${appliedVoucher.code}*\n`
                 msg += `Diskon: -Rp ${appliedVoucher.discount.toLocaleString("id-ID")}\n`
                 msg += `\n*Total: Rp ${finalTotal.toLocaleString("id-ID")}*\n\nMohon info selanjutnya. Terima kasih 🙏`
-                // Redeem the voucher
-                redeemVoucher(appliedVoucher.id)
             } else {
                 msg += `\n*Total: Rp ${cartTotal.toLocaleString("id-ID")}*\n\nMohon info selanjutnya. Terima kasih 🙏`
             }
@@ -158,7 +180,13 @@ export default function CartPage({
             setPendingVoucher(null)
 
             const waUrl = `https://wa.me/${store.whatsappNumber}?text=${encodeURIComponent(msg)}`
-            router.push(`/toko/${slug}/cart/success?slug=${slug}&store=${encodeURIComponent(store.name)}&wa=${encodeURIComponent(waUrl)}`)
+            let successUrl = `/toko/${slug}/cart/success?slug=${slug}&store=${encodeURIComponent(store.name)}&wa=${encodeURIComponent(waUrl)}`
+
+            if (resData.newVoucher) {
+                successUrl += `&newVoucherCode=${resData.newVoucher.code}&newVoucherDiscount=${resData.newVoucher.discount}`
+            }
+
+            router.push(successUrl)
 
         } catch (error) {
             console.error("Checkout Error:", error)
@@ -195,11 +223,26 @@ export default function CartPage({
         }
 
         // Check for eligible voucher (auto-find)
-        const bestVoucher = findBestVoucher(total)
-        if (bestVoucher) {
-            setPendingVoucher(bestVoucher)
-            setShowVoucherModal(true)
-            return
+        setIsLoading(true)
+        try {
+            const searchParams = new URLSearchParams({
+                storeId,
+                wa: form.whatsapp,
+                name: form.name,
+                total: total.toString()
+            })
+            const res = await fetch(`/api/vouchers/eligible?${searchParams.toString()}`)
+            if (res.ok) {
+                const data = await res.json()
+                if (data.voucher) {
+                    setPendingVoucher(data.voucher)
+                    setShowVoucherModal(true)
+                    setIsLoading(false)
+                    return
+                }
+            }
+        } catch (error) {
+            console.error("Auto voucher error:", error)
         }
 
         // No voucher — proceed directly
@@ -460,7 +503,7 @@ export default function CartPage({
                                     {isLoading ? "Memproses..." : "Pesan via WhatsApp"}
                                 </button>
                                 <p className="text-xs text-muted-foreground text-center mt-3">
-                                    Anda akan diarahkan ke WhatsApp penjual setelah klik.
+                                    Pastikan data yang anda masukkan sudah benar sebelum klik pesan
                                 </p>
                             </div>
                         </div>

@@ -58,7 +58,7 @@ export function VoucherModal({
 
                     {/* Title */}
                     <div>
-                        <h2 className="text-lg font-bold text-foreground">🎉 Selamat!</h2>
+                        <h2 className="text-lg font-bold text-foreground">Selamat!</h2>
                         <p className="text-sm text-muted-foreground mt-1">
                             Kamu dapat voucher diskon <span className="font-bold text-primary">Rp {voucher.discount.toLocaleString("id-ID")}</span>
                         </p>
@@ -99,12 +99,12 @@ export function VoucherModal({
                             className="flex-1 rounded-xl h-11 gap-2 text-sm font-semibold bg-[#25D366] hover:bg-[#20b858] text-white"
                         >
                             <CreditCard className="h-4 w-4" />
-                            {paying ? "Memproses..." : "Bayar"}
+                            {paying ? "Memproses..." : "Lanjut Pesan"}
                         </Button>
                     </div>
 
                     <p className="text-[11px] text-muted-foreground">
-                        Simpan kode voucher. Kamu akan diarahkan ke WhatsApp.
+                        Simpan kode voucher untuk digunakan di transaksi berikutnya.
                     </p>
                 </div>
             </div>

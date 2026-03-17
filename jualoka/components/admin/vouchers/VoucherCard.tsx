@@ -1,7 +1,7 @@
 "use client"
 
 import { Voucher } from "@/lib/voucherStore"
-import { Pencil, Trash2, Package } from "lucide-react"
+import { Pencil, Trash2, CalendarX2, CalendarCheck2 } from "lucide-react"
 
 export function VoucherCard({
     voucher,
@@ -12,12 +12,18 @@ export function VoucherCard({
     onEdit: (v: Voucher) => void
     onDelete: (id: string) => void
 }) {
-    const isActive = voucher.stock > 0 && voucher.discount > 0
+    const now = new Date()
+    const expiry = voucher.expiresAt ? new Date(voucher.expiresAt) : null
+    const isExpired = expiry ? expiry < now : false
+    const isActive = voucher.stock > 0 && voucher.discount > 0 && !isExpired
+
+    const formatExpiry = (date: Date) =>
+        date.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
 
     return (
         <div className={`group relative bg-white rounded-2xl border overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 ${isActive ? "border-primary/20" : "border-border/50 opacity-70"}`}>
             {/* Decorative top strip */}
-            <div className={`h-1.5 w-full ${isActive ? "bg-gradient-to-r from-primary to-emerald-400" : "bg-muted"}`} />
+            <div className={`h-1.5 w-full ${isActive ? "bg-linear-to-r from-primary to-emerald-400" : "bg-muted"}`} />
 
             <div className="p-5 space-y-4">
                 {/* Code */}
@@ -27,9 +33,9 @@ export function VoucherCard({
                             {voucher.code}
                         </code>
                     </div>
-                    <span className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full ${isActive ? "bg-emerald-50 text-emerald-600" : "bg-muted text-muted-foreground"}`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-500" : "bg-muted-foreground"}`} />
-                        {isActive ? "Aktif" : "Habis"}
+                    <span className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full ${isActive ? "bg-emerald-50 text-emerald-600" : isExpired ? "bg-amber-50 text-amber-600" : "bg-muted text-muted-foreground"}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-500" : isExpired ? "bg-amber-500" : "bg-muted-foreground"}`} />
+                        {isActive ? "Aktif" : isExpired ? "Kadaluarsa" : "Habis"}
                     </span>
                 </div>
 
@@ -40,7 +46,7 @@ export function VoucherCard({
                         <p className="text-sm font-bold text-foreground">Rp {voucher.discount.toLocaleString("id-ID")}</p>
                     </div>
                     <div className="bg-muted/40 rounded-xl px-3 py-2.5 text-center">
-                        <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground/80 mb-0.5">Min. Trans.</p>
+                        <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground/80 mb-0.5">Threshold Belanja</p>
                         <p className="text-sm font-bold text-foreground">Rp {voucher.minTransaction.toLocaleString("id-ID")}</p>
                     </div>
                     <div className="bg-muted/40 rounded-xl px-3 py-2.5 text-center">
@@ -48,6 +54,19 @@ export function VoucherCard({
                         <p className="text-sm font-bold text-foreground">{voucher.stock}×</p>
                     </div>
                 </div>
+
+                {/* Expiry */}
+                {expiry ? (
+                    <div className={`flex items-center gap-1.5 text-xs rounded-xl px-3 py-2 ${isExpired ? "bg-amber-50 text-amber-600" : "bg-muted/40 text-muted-foreground"}`}>
+                        {isExpired ? <CalendarX2 className="h-3.5 w-3.5 shrink-0" /> : <CalendarCheck2 className="h-3.5 w-3.5 shrink-0" />}
+                        <span>{isExpired ? "Kadaluarsa" : "Berlaku s/d"}: <strong>{formatExpiry(expiry)}</strong></span>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-1.5 text-xs rounded-xl px-3 py-2 bg-muted/40 text-muted-foreground">
+                        <CalendarCheck2 className="h-3.5 w-3.5 shrink-0" />
+                        <span>Tidak ada batas waktu</span>
+                    </div>
+                )}
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 pt-1">
