@@ -19,6 +19,7 @@ export default function CartPage({
     const [mounted, setMounted] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [checkoutError, setCheckoutError] = useState("")
+    const [waError, setWaError] = useState("")
     const [items, setItems] = useState<CartItem[]>([])
     const [form, setForm] = useState({ name: "", whatsapp: "" })
     const [storeId, setStoreId] = useState<string | null>(null)
@@ -26,13 +27,10 @@ export default function CartPage({
 
     useEffect(() => {
         async function loadCart() {
-            // First fetch store info to get storeId
             const storeRes = await fetch(`/api/stores/${slug}`)
             if (storeRes.ok) {
                 const { store } = await storeRes.json()
                 setStoreId(store.id)
-
-                // Fetch cart using storeId
                 const cartData = await getCart(store.id)
                 setItems(cartData)
             }
@@ -55,12 +53,8 @@ export default function CartPage({
         if (!storeId) return
         const item = items.find(it => it.id === id)
         if (!item) return
-
         const newQty = item.quantity + delta
-
-        // Prevent exceeding stock limit
         if (newQty > item.stock) return
-
         if (newQty <= 0) {
             await removeFromCart(storeId, id)
         } else {
@@ -78,12 +72,27 @@ export default function CartPage({
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!items.length || !storeId) return
+
+        // Validasi WhatsApp
+        const wa = form.whatsapp
+        if (!wa) {
+            setWaError("Nomor WhatsApp wajib diisi.")
+            return
+        } else if (!/^(08|8)/.test(wa)) {
+            setWaError("Nomor harus diawali dengan 08 atau 8.")
+            return
+        } else if (wa.length < 12) {
+            setWaError("Nomor WhatsApp minimal 12 digit.")
+            return
+        } else if (wa.length > 14) {
+            setWaError("Nomor WhatsApp maksimal 14 digit.")
+            return
+        }
+
         setIsLoading(true)
         setCheckoutError("")
 
         try {
-            // Get WhatsApp number from the already-loaded store data
-            // (fetch store only once, reuse storeId/whatsappNumber from state)
             const storeRes = await fetch(`/api/stores/${slug}`)
             if (!storeRes.ok) throw new Error("Gagal memuat informasi toko.")
             const { store } = await storeRes.json()
@@ -111,7 +120,6 @@ export default function CartPage({
                 return
             }
 
-            // buat pesan whatsapp
             const total = items.reduce((acc, it) => acc + it.price * it.quantity, 0)
             let msg = `Halo! Saya *${form.name}* ingin memesan:\n\n`
             items.forEach((it) => {
@@ -119,11 +127,9 @@ export default function CartPage({
             })
             msg += `\n*Total: Rp ${total.toLocaleString("id-ID")}*\n\nMohon info selanjutnya. Terima kasih 🙏`
 
-            // hapus cart secara lokal
             await clearCart(store.id)
             setItems([])
 
-            // redirect ke halaman success
             const waUrl = `https://wa.me/${store.whatsappNumber}?text=${encodeURIComponent(msg)}`
             router.push(`/toko/${slug}/cart/success?slug=${slug}&store=${encodeURIComponent(store.name)}&wa=${encodeURIComponent(waUrl)}`)
 
@@ -183,7 +189,6 @@ export default function CartPage({
                     <div className="lg:col-span-3 space-y-3">
                         {items.map((item) => (
                             <div key={item.id} className="bg-white rounded-2xl p-4 border border-border/50 shadow-sm hover:shadow-md transition-all flex flex-col gap-4">
-                                {/* Top Section: Product Info */}
                                 <div className="flex items-center gap-4">
                                     {item.image ? (
                                         <img
@@ -207,11 +212,10 @@ export default function CartPage({
                                     </div>
                                 </div>
 
-                                {/* Bottom Section: Controls & Total */}
                                 <div className="flex items-center justify-between pt-3.5 border-t border-dashed border-border/60">
                                     <div className="flex items-center gap-2 bg-muted/40 p-1 rounded-xl">
-                                        <button 
-                                            onClick={() => update(item.id, -1)} 
+                                        <button
+                                            onClick={() => update(item.id, -1)}
                                             className="h-8 w-8 rounded-lg border border-border bg-white flex items-center justify-center hover:border-primary hover:text-primary transition-all active:scale-95 shadow-sm"
                                         >
                                             <Minus className="h-3 w-3" />
@@ -233,8 +237,8 @@ export default function CartPage({
                                                 Rp {(item.price * item.quantity).toLocaleString("id-ID")}
                                             </span>
                                         </div>
-                                        <button 
-                                            onClick={() => remove(item.id)} 
+                                        <button
+                                            onClick={() => remove(item.id)}
                                             className="h-9 w-9 flex items-center justify-center rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all transform active:scale-90 shadow-sm border border-red-100"
                                             title="Hapus Produk"
                                         >
@@ -270,11 +274,36 @@ export default function CartPage({
                                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Data Pembeli</h3>
                                 <div className="space-y-1.5">
                                     <Label htmlFor="name" className="text-xs">Nama Lengkap *</Label>
-                                    <Input id="name" placeholder="Budi Santoso" className="h-10 rounded-xl text-sm" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                                    <Input
+                                        id="name"
+                                        placeholder="Budi Santoso"
+                                        className="h-10 rounded-xl text-sm"
+                                        required
+                                        value={form.name}
+                                        onChange={(e) => setForm({ ...form, name: e.target.value })}
+                                    />
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label htmlFor="wa" className="text-xs">Nomor WhatsApp *</Label>
-                                    <Input id="wa" type="tel" placeholder="0812xxxx" className="h-10 rounded-xl text-sm" required value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} />
+                                    <Input
+                                        id="wa"
+                                        type="tel"
+                                        inputMode="numeric"
+                                        placeholder="08123456789"
+                                        className={`h-10 rounded-xl text-sm ${waError ? "border-destructive focus:ring-destructive/20" : ""}`}
+                                        required
+                                        value={form.whatsapp}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/[^0-9]/g, "")
+                                            setForm({ ...form, whatsapp: val })
+                                            setWaError("")
+                                        }}
+                                    />
+                                    {waError && (
+                                        <p className="text-xs text-destructive flex items-center gap-1">
+                                            <AlertCircle className="h-3 w-3" /> {waError}
+                                        </p>
+                                    )}
                                 </div>
                             </form>
                             <div className="px-6 pb-6">
