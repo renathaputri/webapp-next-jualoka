@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyAuth } from "@/lib/auth"
-import { getProductStatus, PRODUCT_SUGGESTIONS, NEEDS_ATTENTION_STATUSES } from "@/lib/productStatus"
+import { getProductStatus, getProductSuggestion, NEEDS_ATTENTION_STATUSES } from "@/lib/productStatus"
 
 export async function GET(req: Request) {
     try {
@@ -98,11 +98,9 @@ export async function GET(req: Request) {
 
         const productsWithStatus = sortedProducts.map((p) => {
             const sold = p.sold
-            const status = getProductStatus(
-                { price: p.price, cost: p.cost, sold, createdAt: p.createdAt },
-                sortedProducts,
-            )
-            const suggestion = PRODUCT_SUGGESTIONS[status] ?? "Tidak ada penjualan. Perlu evaluasi apakah produk masih relevan."
+            const productData = { price: p.price, cost: p.cost, sold, createdAt: p.createdAt }
+            const status = getProductStatus(productData, sortedProducts)
+            const suggestion = getProductSuggestion(productData, status)
 
             return { name: p.name, sold, status, suggestion }
         })

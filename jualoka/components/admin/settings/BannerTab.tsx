@@ -275,8 +275,66 @@ export function BannerTab() {
                             <ThemePicker value={config.theme} onChange={(t) => patch("theme", t)} />
                             {config.theme === "custom" && (
                                 <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-semibold text-foreground/80">Kelas Gradient (Tailwind)</label>
-                                    <input type="text" className={INPUT} placeholder="from-[#1d4ed8] to-[#3b82f6]" value={config.customGradient} onChange={(e) => patch("customGradient", e.target.value)} />
+                                    <label className="text-xs font-semibold text-foreground/80">Warna Gradasi (Awal & Akhir)</label>
+                                    <div className="flex gap-4">
+                                        <div className="flex-1 space-y-1.5">
+                                            <div className="flex bg-[#f8fafb] border border-border rounded-xl overflow-hidden h-[42px] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all">
+                                                <input
+                                                    type="color"
+                                                    className="w-12 h-full cursor-pointer p-0 border-none rounded-none bg-transparent block"
+                                                    value={
+                                                        config.customGradient.match(/from-\[([^\]]+)\]/)?.[1] || "#1d4ed8"
+                                                    }
+                                                    onChange={(e) => {
+                                                        const startColor = e.target.value;
+                                                        const currentEnd = config.customGradient.match(/to-\[([^\]]+)\]/)?.[1] || "#3b82f6";
+                                                        patch("customGradient", `from-[${startColor}] to-[${currentEnd}]`);
+                                                    }}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    className="flex-1 h-full px-3 text-sm outline-none bg-transparent font-mono uppercase"
+                                                    value={
+                                                        config.customGradient.match(/from-\[([^\]]+)\]/)?.[1] || "#1D4ED8"
+                                                    }
+                                                    onChange={(e) => {
+                                                        const startColor = e.target.value;
+                                                        const currentEnd = config.customGradient.match(/to-\[([^\]]+)\]/)?.[1] || "#3b82f6";
+                                                        patch("customGradient", `from-[${startColor}] to-[${currentEnd}]`);
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex-1 space-y-1.5">
+                                            <div className="flex bg-[#f8fafb] border border-border rounded-xl overflow-hidden h-[42px] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all">
+                                                <input
+                                                    type="color"
+                                                    className="w-12 h-full cursor-pointer p-0 border-none rounded-none bg-transparent block"
+                                                    value={
+                                                        config.customGradient.match(/to-\[([^\]]+)\]/)?.[1] || "#3b82f6"
+                                                    }
+                                                    onChange={(e) => {
+                                                        const currentStart = config.customGradient.match(/from-\[([^\]]+)\]/)?.[1] || "#1d4ed8";
+                                                        const endColor = e.target.value;
+                                                        patch("customGradient", `from-[${currentStart}] to-[${endColor}]`);
+                                                    }}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    className="flex-1 h-full px-3 text-sm outline-none bg-transparent font-mono uppercase"
+                                                    value={
+                                                        config.customGradient.match(/to-\[([^\]]+)\]/)?.[1] || "#3B82F6"
+                                                    }
+                                                    onChange={(e) => {
+                                                        const currentStart = config.customGradient.match(/from-\[([^\]]+)\]/)?.[1] || "#1d4ed8";
+                                                        const endColor = e.target.value;
+                                                        patch("customGradient", `from-[${currentStart}] to-[${endColor}]`);
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                         </CardContent>

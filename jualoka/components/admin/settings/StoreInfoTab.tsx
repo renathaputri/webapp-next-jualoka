@@ -11,7 +11,7 @@ import { STORE_CATEGORIES, type StoreCategory } from "@/lib/categories"
 import Swal from "sweetalert2"
 
 import { useRouter } from "next/navigation"
-
+import { authClient } from "@/lib/auth-client"
 export function StoreInfoTab() {
     const router = useRouter()
     const [copied, setCopied] = useState(false)
@@ -95,7 +95,8 @@ export function StoreInfoTab() {
             })
             if (res.ok) {
                 toast.success("Toko berhasil dihapus.")
-                router.push("/admin/setup")
+                await authClient.signOut()
+                router.push("/auth/login")
             } else {
                 const data = await res.json()
                 toast.error(data.message || "Gagal menghapus toko.")

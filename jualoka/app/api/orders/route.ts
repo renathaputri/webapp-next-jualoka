@@ -79,26 +79,37 @@ export async function POST(req: Request) {
             }
         }
 
-        const newOrder = await prisma.order.create({
-            data: {
-                storeId,
-                customerName,
-                customerWhatsapp,
-                status: "baru",
-                orderItems: {
-                    create: (items as { productId: string; quantity: number }[]).map((item) => {
-                        const product = products.find(p => p.id === item.productId)!
-                        return {
-                            productId: item.productId,
-                            quantity: item.quantity,
-                            price: product.price
-                        }
-                    })
+        const newOrder = await prisma.$transaction(async (tx) => {
+            const lastOrder = await tx.order.findFirst({
+                where: { storeId },
+                orderBy: { orderNumber: "desc" },
+                select: { orderNumber: true }
+            })
+
+            const nextOrderNumber = lastOrder ? lastOrder.orderNumber + 1 : 1
+
+            return await tx.order.create({
+                data: {
+                    storeId,
+                    customerName,
+                    customerWhatsapp,
+                    status: "baru",
+                    orderNumber: nextOrderNumber,
+                    orderItems: {
+                        create: (items as { productId: string; quantity: number }[]).map((item) => {
+                            const product = products.find(p => p.id === item.productId)!
+                            return {
+                                productId: item.productId,
+                                quantity: item.quantity,
+                                price: product.price
+                            }
+                        })
+                    }
+                },
+                include: {
+                    orderItems: { include: { product: true } }
                 }
-            },
-            include: {
-                orderItems: { include: { product: true } }
-            }
+            })
         })
 
         // Decrement stock + fire notifications in parallel for best performance
