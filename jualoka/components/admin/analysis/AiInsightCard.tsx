@@ -39,7 +39,7 @@ export function AiInsightCard({ aiInsight, isAiLoading, onGenerate }: AiInsightC
                 {isAiLoading ? (
                     <div className="flex items-center gap-3 py-2 text-sm text-violet-600">
                         <RefreshCw className="h-4 w-4 animate-spin shrink-0" />
-                        <span className="font-medium">Gemini sedang menganalisis data bisnis Anda…</span>
+                        <span className="font-medium">Jualoka AI sedang menganalisis data bisnis Anda…</span>
                     </div>
                 ) : aiInsight ? (
                     <div className="prose prose-sm prose-zinc max-w-none

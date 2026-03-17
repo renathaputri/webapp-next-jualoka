@@ -17,6 +17,10 @@ export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),
+    session: {
+        expiresIn: 60 * 60 * 24 * 7, // Mengatur sesi menjadi 7 hari (dalam detik)
+        updateAge: 60 * 60 * 24, // Memperpanjang sesi secara otomatis jika pengguna rutin membuka aplikasi (setiap 1 hari)
+    },
     emailAndPassword: {
         enabled: true,
         autoSignIn: false, // Require email verification before allowing sign-in

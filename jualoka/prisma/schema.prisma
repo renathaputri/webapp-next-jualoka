@@ -106,7 +106,7 @@ model Order {
   customerWhatsapp String
   createdAt        DateTime    @default(now())
   status           String      @default("baru")
-  orderNumber      Int         @default(autoincrement())
+  orderNumber      Int
   store            Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   orderItems       OrderItem[]
 }

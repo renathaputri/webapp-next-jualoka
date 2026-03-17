@@ -44,12 +44,27 @@ export const PRODUCT_SUGGESTIONS: Record<ProductStatus, string> = {
     "Baru": "Produk baru. Maksimalkan promosi agar mendapatkan penjualan pertama.",
 }
 
-// ─── Needs-Attention Filter ───────────────────────────────────────────────────
+export function getProductSuggestion(product: ProductForStatus, status: ProductStatus): string {
+    if (product.createdAt) {
+        const createdDate = typeof product.createdAt === 'string' ? new Date(product.createdAt) : product.createdAt
+        const daysSinceCreation = (Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
 
-/**
- * Statuses that indicate a product needs merchant attention.
- * Used by the "Butuh Perhatian" section in the analysis page.
- */
+        if (status === "Tidak Layak" && daysSinceCreation > 7 && daysSinceCreation <= 30 && product.sold === 0) {
+            return "Waspada: Belum ada penjualan setelah 7 hari rilis. Pasang promo khusus atau bagikan produk ke media sosial."
+        }
+
+        if (status === "Kurang Laku" && daysSinceCreation > 7 && daysSinceCreation <= 30 && product.sold <= 2) {
+            return "Perhatian ekstra: Penjualan masih kurang memuaskan setelah lebih dari sepekan rilis. Periksa kembali harga kompetitor."
+        }
+
+        if (status === "Rugi" && daysSinceCreation > 30 && product.sold === 0) {
+            return "Kritis: Tidak laku sama sekali setelah 1 bulan rilis. Evaluasi total, turunkan harga drastis, atau pertimbangkan untuk hapus produk."
+        }
+    }
+
+    return PRODUCT_SUGGESTIONS[status]
+}
+
 export const NEEDS_ATTENTION_STATUSES: ProductStatus[] = [
     "Kurang Laku",
     "Tidak Layak",
@@ -87,12 +102,24 @@ export function getProductStatus(
     // 1. Negative profit takes priority over percentile ranking
     if (product.price < actualCost || totalProfit < 0) return "Rugi"
 
-    // 2. Check if product is "Baru" (0 sales + created recently)
-    if (product.sold === 0 && product.createdAt) {
+    // 2. Determine age of product
+    if (product.createdAt) {
         const createdDate = typeof product.createdAt === 'string' ? new Date(product.createdAt) : product.createdAt
         const daysSinceCreation = (Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
-        if (daysSinceCreation <= NEW_PRODUCT_DAYS_THRESHOLD) {
+
+        if (daysSinceCreation <= 7 && product.sold === 0) {
             return "Baru"
+        }
+
+        // Product is between 7 and 30 days old
+        if (daysSinceCreation > 7 && daysSinceCreation <= 30) {
+            if (product.sold === 0) return "Tidak Layak"
+            if (product.sold <= 2) return "Kurang Laku" // Set a low threshold like <= 2 for low sales
+        }
+
+        // Product is older than 30 days
+        if (daysSinceCreation > 30 && product.sold === 0) {
+            return "Rugi" // Completely dead product after a month
         }
     }
 
